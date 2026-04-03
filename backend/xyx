@@ -1,0 +1,697 @@
+// models 
+
+// import mongoose, { skipMiddlewareFunction } from "mongoose";
+
+// const mealSchema = new mongoose.Schema(
+//   {
+//     userId: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: "User",
+//       required: true,
+//     },
+
+//     date: {
+//       type: Date,
+//       required: true,
+//       index: true,
+//     },
+
+//     breakfast: {
+//       type: Boolean,
+//       default: true,
+//     },
+
+//     lunch: {
+//       type: Boolean,
+//       default: true,
+//     },
+
+//     dinner: {
+//       type: Boolean,
+//       default: true,
+//     },
+
+//     // Optional: track if student skipped after opting
+//     isSkipped: {
+//       type: Boolean,
+//       default: false,
+//     },
+//   },
+//   { timestamps: true }
+// );
+
+// // Prevent duplicate entry for same user + same date
+// mealSchema.index({ userId: 1, date: 1 }, { unique: true });
+
+// export default mongoose.model("Meal", mealSchema);
+
+
+// import mongoose from "mongoose";
+
+// const menuSchema = new mongoose.Schema(
+//   {
+//     date: {
+//       type: Date,
+//       required: true,
+//       unique: true,
+//       index: true,
+//     },
+
+//     breakfast: {
+//       type: String,
+//       required: true,
+//       trim: true,
+//     },
+
+//     lunch: {
+//       type: String,
+//       required: true,
+//       trim: true,
+//     },
+
+//     dinner: {
+//       type: String,
+//       required: true,
+//       trim: true,
+//     },
+
+//     // Optional: who created menu
+//     createdBy: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: "User",
+//     },
+
+//     isPublished: {
+//       type: Boolean,
+//       default: false,
+//     },
+//   },
+//   { timestamps: true }
+// );
+
+// export default mongoose.model("Menu", menuSchema);
+
+
+// import mongoose from "mongoose";
+
+// const sessionSchema = new mongoose.Schema(
+//   {
+//     userId: {
+//       type: mongoose.Schema.Types.ObjectId,
+//       ref: "User",
+//       required: true,
+//       index: true,
+//     },
+
+//     token: {
+//       type: String,
+//       required: true,
+//     },
+
+//     device: {
+//       type: String,
+//       default: "unknown",
+//     },
+
+//     ip: {
+//       type: String,
+//     },
+
+//     isActive: {
+//       type: Boolean,
+//       default: true,
+//     },
+
+//     expiresAt: {
+//       type: Date,
+//       required: true,
+//     },
+//   },
+//   { timestamps: true }
+// );
+
+// // Auto delete expired sessions
+// sessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+// export const Session = mongoose.model("Session", sessionSchema);
+
+// import mongoose from "mongoose";
+// import User from "../models/userModel.js";
+
+// const userSchema = new mongoose.Schema(
+//   {
+//     name: {
+//       type: String,
+//       required: true,
+//       trim: true,
+//     },
+
+//     email: {
+//       type: String,
+//       required: true,
+//       unique: true,
+//       lowercase: true,
+//       trim: true,
+//       index: true,
+//     },
+
+//     password: {
+//       type: String,
+//       minlength: 6,
+//     },
+
+//     role: {
+//       type: String,
+//       enum: ["student", "admin", "mess_manager"],
+//       default: "student",
+//     },
+
+//     // Google Auth
+//     googleId: {
+//       type: String,
+//       sparse: true,
+//     },
+
+//     isVerified: {
+//       type: Boolean,
+//       default: false,
+//     },
+
+//     otp: {
+//       type: String,
+//       default: null,
+//     },
+
+//     otpExpiry: {
+//       type: Date,
+//       default: null,
+//     },
+
+//     EnrollmentId: {
+//       type: String,
+//       unique: true,
+//       sparse: true,
+//     },
+//   },
+//   { timestamps: true }
+// );
+
+// export default mongoose.model("User", userSchema);
+
+
+// //middleware 
+
+// import jwt from "jsonwebtoken";
+// import { Session } from "../models/sessionModel.js";
+
+// export const protect = async (req, res, next) => {
+//   try {
+//     let token;
+
+//     // check header
+//     if (
+//       req.headers.authorization &&
+//       req.headers.authorization.startsWith("Bearer")
+//     ) {
+//       token = req.headers.authorization.split(" ")[1];
+//     }
+
+//     if (!token) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "Not authorized, token missing",
+//       });
+//     }
+
+//     // verify token
+//     const decoded = jwt.verify(token, process.env.SECRET_KEY);
+
+//     // check session (important 🔥)
+//     const session = await Session.findOne({
+//       userId: decoded.id,
+//       token,
+//     });
+
+//     if (!session) {
+//       return res.status(401).json({
+//         success: false,
+//         message: "Session expired or invalid",
+//       });
+//     }
+
+//     // attach user info
+//     req.userId = decoded.id;
+//     req.userRole = decoded.role;
+
+//     next();
+
+//   } catch (error) {
+//     return res.status(401).json({
+//       success: false,
+//       message: "Unauthorized",
+//     });
+//   }
+// };
+
+// export const errorHandler = (err, req, res, next) => {
+//   console.error(err);
+
+//   return res.status(err.statusCode || 500).json({
+//     success: false,
+//     message: err.message || "Server Error",
+//   });
+// };
+
+// export const authorize = (...roles) => {
+//   return (req, res, next) => {
+//     if (!roles.includes(req.userRole)) {
+//       return res.status(403).json({
+//         success: false,
+//         message: "Access denied",
+//       });
+//     }
+
+//     next();
+//   };
+// };
+
+// export const validate = (schema) => (req, res, next) => {
+//   const { error, value } = schema.validate(req.body);
+
+//   if (error) {
+//     return res.status(400).json({
+//       success: false,
+//       message: error.details[0].message,
+//     });
+//   }
+
+//   req.validatedData = value;
+//   next();
+// };
+
+// //config
+
+// export const ROLES = {
+//   STUDENT: "student",
+//   ADMIN: "admin",
+//   MESS_MANAGER: "mess_manager",
+// };
+
+// export const TOKEN_EXPIRY = {
+//   ACCESS: "10d",
+//   REFRESH: "30d",
+//   EMAIL_VERIFY: "10m",
+// };
+
+// export const OTP_CONFIG = {
+//   LENGTH: 6,
+//   EXPIRY_MS: 10 * 60 * 1000, // 10 minutes
+// };
+
+// export const MEAL_TYPES = ["breakfast", "lunch", "dinner"];
+
+// import mongoose from "mongoose";
+
+// const connectDB = async () => {
+//     try {
+//         await mongoose.connect("mongodb://127.0.0.1:27017/mess_management");
+//         console.log("MongoDB Connected");
+//     } catch (error) {
+//         console.log(error);
+//     }
+// };
+
+// export default connectDB;
+
+// import dotenv from "dotenv";
+
+// dotenv.config();
+
+// export const ENV = {
+//   PORT: process.env.PORT || 5000,
+//   MONGO_URI: process.env.MONGO_URI,
+//   JWT_SECRET: process.env.SECRET_KEY,
+
+//   EMAIL_USER: process.env.EMAIL_USER,
+//   EMAIL_PASS: process.env.EMAIL_PASS,
+
+//   NODE_ENV: process.env.NODE_ENV || "development",
+// };
+
+// // basic check (important 🔥)
+// if (!ENV.MONGO_URI || !ENV.JWT_SECRET) {
+//   console.error("❌ Missing required environment variables");
+//   process.exit(1);
+// }
+
+// import passport from "passport";
+// import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+// console.log("CLIENT ID:", process.env.GOOGLE_CLIENT_ID);
+// import User from "../models/userModel.js";
+// import { ENV } from "./env.js";
+
+// passport.use(
+//   new GoogleStrategy(
+//     {
+//       clientID: process.env.GOOGLE_CLIENT_ID,
+//       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+//       callbackURL: "/api/auth/google/callback",
+//     },
+//     async (accessToken, refreshToken, profile, done) => {
+//       try {
+//         // check existing user
+//         let user = await User.findOne({ googleId: profile.id });
+
+//         if (!user) {
+//           // create new user
+//           user = await User.create({
+//             googleId: profile.id,
+//             name: profile.displayName,
+//             email: profile.emails?.[0]?.value,
+//             isVerified: true,
+//           });
+//         }
+
+//         return done(null, user);
+
+//       } catch (error) {
+//         return done(error, null);
+//       }
+//     }
+//   )
+// );
+
+
+// // ================= SESSION HANDLING =================
+
+// // store user id in session
+// passport.serializeUser((user, done) => {
+//   done(null, user.id);
+// });
+
+// // get user from session
+// passport.deserializeUser(async (id, done) => {
+//   try {
+//     const user = await User.findById(id);
+//     done(null, user);
+//   } catch (error) {
+//     done(error, null);
+//   }
+// });
+
+// export default passport;
+
+
+// //templates
+// <!DOCTYPE html>
+// <html lang="en">
+// <head>
+//   <meta charset="UTF-8" />
+//   <title>Email Verification</title>
+//   <style>
+//     body {
+//       margin: 0;
+//       padding: 0;
+//       font-family: 'Segoe UI', sans-serif;
+//       background-color: #f4f4f4;
+//     }
+
+//     .container {
+//       max-width: 600px;
+//       margin: auto;
+//       background: #ffffff;
+//       padding: 30px;
+//       border-radius: 8px;
+//       box-shadow: 0 0 10px rgba(0,0,0,0.1);
+//     }
+
+//     .header {
+//       text-align: center;
+//       border-bottom: 1px solid #eee;
+//       padding-bottom: 15px;
+//     }
+
+//     .header h2 {
+//       color: #333;
+//     }
+
+//     .message {
+//       font-size: 16px;
+//       color: #555;
+//       line-height: 1.6;
+//       padding: 20px 0;
+//       text-align: center;
+//     }
+
+//     .button {
+//       display: inline-block;
+//       padding: 12px 24px;
+//       background-color: #00a63d;
+//       color: #ffffff !important;
+//       text-decoration: none;
+//       border-radius: 5px;
+//       font-weight: bold;
+//       margin-top: 20px;
+//     }
+
+//     .footer {
+//       font-size: 13px;
+//       color: #999;
+//       text-align: center;
+//       margin-top: 30px;
+//     }
+
+//     a {
+//       color: #ffffff;
+//     }
+//   </style>
+// </head>
+
+// <body>
+//   <div class="container">
+    
+//     <div class="header">
+//       <h2>Verify Your Email</h2>
+//     </div>
+
+//     <div class="message">
+//       <p>Hello 👋,</p>
+
+//       <p>
+//         Thank you for registering. Please verify your email address
+//         to activate your account.
+//       </p>
+
+//       <a 
+//         href="{{frontendUrl}}/verify/{{token}}" 
+//         target="_blank"
+//         class="button"
+//       >
+//         Verify Email
+//       </a>
+
+//       <p style="margin-top:20px;">
+//         If you didn’t create an account, you can safely ignore this email.
+//       </p>
+//     </div>
+
+//     <div class="footer">
+//       &copy; Mess Management System
+//     </div>
+
+//   </div>
+// </body>
+// </html>
+
+
+// //utils
+// import nodemailer from "nodemailer";
+// import { ENV } from "../config/env.js";
+
+// export const transporter = nodemailer.createTransport({
+//   service: "gmail",
+//   auth: {
+//     user: ENV.EMAIL_USER,
+//     pass: ENV.EMAIL_PASS,
+//   },
+// });
+
+// // Verify transporter configuration
+// transporter.verify((error, success) => {
+//   if (error) {
+//     console.error("Transporter verification failed:", error);
+//   } else {
+//     console.log("Transporter is ready to send emails");
+//   }
+// });
+
+// import { transporter } from "./mailer.js";
+
+// /**
+//  * Send OTP email
+//  * @param {string} email - recipient email
+//  * @param {string} otp - 6-digit OTP
+//  * @param {"registration"|"forgot"} type - type of OTP
+//  */
+// export const sendOtpMail = async (email, otp, type = "forgot") => {
+//   try {
+//     const subject =
+//       type === "registration"
+//         ? "Verify Your Email - Mess Management System"
+//         : "Password Reset OTP - Mess Management System";
+
+//     const html =
+//       type === "registration"
+//         ? `
+//           <p>Welcome to Mess Management System!</p>
+//           <p>Your OTP for email verification is:</p>
+//           <h2>${otp}</h2>
+//           <p>This OTP is valid for 10 minutes.</p>
+//         `
+//         : `
+//           <p>Your OTP for password reset is:</p>
+//           <h2>${otp}</h2>
+//           <p>This OTP is valid for 10 minutes.</p>
+//         `;
+
+//     const mailOptions = {
+//       from: `"Mess Management" <${process.env.EMAIL_USER}>`,
+//       to: email,
+//       subject,
+//       html,
+//     };
+
+//     await transporter.sendMail(mailOptions);
+
+//     console.log(`OTP email sent to ${email} (${type})`);
+
+//   } catch (error) {
+//     console.error("Failed to send OTP email:", error.message);
+//     throw new Error("Failed to send OTP email");
+//   }
+// };
+
+// import fs from "fs";
+// import path from "path";
+// import handlebars from "handlebars";
+// import { fileURLToPath } from "url";
+// import { transporter } from "./mailer.js";
+// import { ENV } from "../config/env.js";
+
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
+
+// export const verifyMail = async (token, email) => {
+//   try {
+//     // load template
+//     const templatePath = path.join(
+//       __dirname,
+//       "../templates/verifyEmail.hbs"
+//     );
+
+//     const source = fs.readFileSync(templatePath, "utf-8");
+
+//     const compiledTemplate = handlebars.compile(source);
+
+//     const html = compiledTemplate({
+//       token: encodeURIComponent(token),
+//       frontendUrl: ENV.FRONTEND_URL || "http://localhost:5173",
+//     });
+
+//     console.log("Sending verification email to:", email);
+//     console.log("Frontend URL:", ENV.FRONTEND_URL || "http://localhost:5173");
+
+//     // send mail
+//     const info = await transporter.sendMail({
+//       from: `"Mess Management" <${ENV.EMAIL_USER}>`,
+//       to: email,
+//       subject: "Verify Your Email",
+//       html,
+//     });
+
+//     console.log("Email sent successfully:", info.messageId);
+
+//   } catch (error) {
+//     console.error("Email sending failed:", error.message);
+//     throw new Error("Email verification failed");
+//   }
+// };
+
+
+// //validation
+
+// import Joi from "joi";
+
+// // ================= REGISTER =================
+// export const registerSchema = Joi.object({
+//   name: Joi.string().min(3).max(50).required(),
+//   email: Joi.string().email().required(),
+//   password: Joi.string().min(6).required(),
+// });
+
+
+// // ================= LOGIN =================
+// export const loginSchema = Joi.object({
+//   email: Joi.string().email().required(),
+//   password: Joi.string().required(),
+// });
+
+
+// // ================= FORGOT PASSWORD =================
+// export const forgotSchema = Joi.object({
+//   email: Joi.string().email().required(),
+// });
+
+
+// // ================= VERIFY OTP =================
+// export const otpSchema = Joi.object({
+//   otp: Joi.string().length(6).required(),
+// });
+
+
+// // ================= CHANGE PASSWORD =================
+// export const changePasswordSchema = Joi.object({
+//   newPassword: Joi.string().min(6).required(),
+// });
+
+// import Joi from "joi";
+
+
+// // ================= OPT MEAL =================
+// export const mealSchema = Joi.object({
+//   date: Joi.date().required(),
+
+//   breakfast: Joi.boolean().optional(),
+//   lunch: Joi.boolean().optional(),
+//   dinner: Joi.boolean().optional(),
+// });
+
+// import Joi from "joi";
+
+
+// // ================= CREATE / UPDATE MENU =================
+// export const menuSchema = Joi.object({
+//   date: Joi.date().required(),
+
+//   breakfast: Joi.string().min(2).required(),
+//   lunch: Joi.string().min(2).required(),
+//   dinner: Joi.string().min(2).required(),
+// });
+
+
+// import Joi from "joi";
+
+
+// // ================= UPDATE PROFILE =================
+// export const updateProfileSchema = Joi.object({
+//   name: Joi.string().min(3).max(50).optional(),
+// });
+
+
+// // ================= UPDATE ROLE (ADMIN) =================
+// export const updateRoleSchema = Joi.object({
+//   role: Joi.string()
+//     .valid("student", "admin", "mess_manager")
+//     .required(),
+// });
+

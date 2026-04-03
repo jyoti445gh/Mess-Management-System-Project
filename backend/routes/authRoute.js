@@ -1,29 +1,94 @@
-import express from "express"
-import passport from "passport"
-import jwt from "jsonwebtoken"
-import { isAuthenticated } from "../middleware/isAuthenticated.js";
+import express from "express";
+import passport from "../config/passport.js";
+
+import {
+  registerUser,
+  verification,
+  loginUser,
+  logoutUser,
+  forgotPassword,
+  verifyOTP,
+  changePassword,
+} from "../controllers/authController.js";
+
+import { validate } from "../middleware/validate.js";
+import {
+  registerSchema,
+  loginSchema,
+  forgotSchema,
+  otpSchema,
+  changePasswordSchema,
+} from "../validation/authValidation.js";
+
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-//Step-1: Redirect to Google login
-router.get("/google", passport.authenticate("google", {scope:["profile", "email"]}))
 
-router.get("/google/callback", 
+// ================= AUTH =================
 
-    passport.authenticate("google", {session:false}),
-    (req, res)=>{
-        try {
-            const token = jwt.sign({id:req.user._id, email:req.user.email}, process.env.SECRET_KEY, {expiresIn:"7d"})
-            res.redirect(`${process.env.CLIENT_URL}/auth-success?token=${token}`)
-        } catch (error) {
-            console.error("Google login error:", error)
-            res.redirect(`${process.env.CLIENT_URL}/login?error=google_failed`)
-        }
-    }
-)
+// register
+router.post("/register", validate(registerSchema), registerUser);
 
-router.get("/me", isAuthenticated, (req, res)=>{
-    res.json({success:true, user:req.user})
-})
+// email verification
+router.get("/verify", verification);
 
-export default router
+// login
+router.post("/login", validate(loginSchema), loginUser);
+
+// logout
+router.post("/logout", protect, logoutUser);
+
+
+// ================= PASSWORD =================
+
+// forgot password (send OTP)
+router.post("/forgot-password", validate(forgotSchema), forgotPassword);
+
+// verify OTP
+router.post("/verify-otp/:email", validate(otpSchema), verifyOTP);
+
+// change password
+router.post(
+  "/change-password/:email",
+  validate(changePasswordSchema),
+  changePassword
+);
+
+
+// ================= GOOGLE AUTH =================
+
+// redirect to google
+router.get(
+  "/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    session: false, // ✅ IMPORTANT (JWT based)
+  })
+);
+
+// callback
+router.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    failureRedirect: "/login",
+    session: false,
+  }),
+  (req, res) => {
+    // 👉 generate JWT here
+    const jwt = require("jsonwebtoken");
+
+    const token = jwt.sign(
+      { id: req.user._id, role: req.user.role },
+      process.env.SECRET_KEY
+    );
+
+    return res.json({
+      success: true,
+      token,
+      user: req.user,
+    });
+  }
+);
+
+export default router;

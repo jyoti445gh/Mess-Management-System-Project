@@ -1,16 +1,61 @@
-import express from "express"
-import { changePassword, forgotPassword, loginUser, logoutUser, registerUser, verification, verifyOTP } from "../controllers/userController.js"
-import { isAuthenticated } from "../middleware/isAuthenticated.js"
-import { userSchema, validateUser } from "../validators/userValidate.js"
+import express from "express";
+import {
+  getProfile,
+  updateProfile,
+  getAllUsers,
+  getUserById,
+  updateUserRole,
+  deleteUser,
+} from "../controllers/userController.js";
 
-const router = express.Router()
+import { protect } from "../middleware/authMiddleware.js";
+import { authorize } from "../middleware/roleMiddleware.js";
+import { validate } from "../middleware/validate.js";
 
-router.post('/register',validateUser(userSchema), registerUser)
-router.post('/verify', verification)
-router.post('/login', loginUser)
-router.post('/logout', isAuthenticated, logoutUser)
-router.post('/forgot-password', forgotPassword)
-router.post('/verify-otp/:email', verifyOTP)
-router.post('/change-password/:email', changePassword)
+import Joi from "joi";
 
-export default router
+const router = express.Router();
+
+// validation schemas (local)
+const updateProfileSchema = Joi.object({
+  name: Joi.string().min(3).optional(),
+});
+
+const updateRoleSchema = Joi.object({
+  role: Joi.string().valid("student", "admin", "mess_manager").required(),
+});
+
+// ================= USER =================
+
+// get own profile
+router.get("/profile", protect, getProfile);
+
+// update profile
+router.put(
+  "/profile",
+  protect,
+  validate(updateProfileSchema),
+  updateProfile
+);
+
+// ================= ADMIN =================
+
+// get all users
+router.get("/", protect, authorize("admin"), getAllUsers);
+
+// get single user
+router.get("/:id", protect, authorize("admin"), getUserById);
+
+// update role
+router.put(
+  "/role/:id",
+  protect,
+  authorize("admin"),
+  validate(updateRoleSchema),
+  updateUserRole
+);
+
+// delete user
+router.delete("/:id", protect, authorize("admin"), deleteUser);
+
+export default router;
