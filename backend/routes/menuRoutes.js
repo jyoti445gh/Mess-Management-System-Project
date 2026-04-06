@@ -4,6 +4,7 @@ import {
   updateMenu,
   getMenuByDate,
   getAllMenus,
+  getWeeklyMenu,
 } from "../controllers/menuController.js";
 
 import { protect } from "../middleware/authMiddleware.js";
@@ -11,30 +12,21 @@ import { authorize } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
-// ================= PUBLIC =================
+// IMPORTANT: specific routes MUST come before /:id param routes
 
-// get menu by date
-router.get("/", getMenuByDate);
+// get weekly published menus (public)
+router.get("/weekly", getWeeklyMenu);
 
-// get all menus
+// get all menus (public)
 router.get("/all", getAllMenus);
 
-// ================= ADMIN / MANAGER =================
+// get menu by date (public) — e.g. /api/menu?date=2026-04-04
+router.get("/", getMenuByDate);
 
-// create menu
-router.post(
-  "/",
-  protect,
-  authorize("admin", "mess_manager"),
-  createMenu
-);
+// create menu (manager/admin)
+router.post("/", protect, authorize("admin", "mess_manager"), createMenu);
 
-// update menu
-router.put(
-  "/:id",
-  protect,
-  authorize("admin", "mess_manager"),
-  updateMenu
-);
+// update menu (manager/admin)
+router.put("/:id", protect, authorize("admin", "mess_manager"), updateMenu);
 
 export default router;

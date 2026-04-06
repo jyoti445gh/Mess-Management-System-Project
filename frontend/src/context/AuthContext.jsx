@@ -7,7 +7,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // 🔥 Restore user on refresh
+  // Restore user on refresh
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -16,14 +16,14 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // 🔐 LOGIN
+  // LOGIN
   const login = (data) => {
-    localStorage.setItem("token", data.accessToken);
+    localStorage.setItem("accessToken", data.accessToken);
     localStorage.setItem("user", JSON.stringify(data.user));
     setUser(data.user);
   };
 
-  // 🚪 LOGOUT
+  // LOGOUT
   const logout = async () => {
     try {
       await API.post("/auth/logout");

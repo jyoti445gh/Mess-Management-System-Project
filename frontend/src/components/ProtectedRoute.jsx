@@ -3,13 +3,13 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const ProtectedRoute = ({ children, role }) => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
 
-  if (!user) return <Navigate to="/login" />;
+  if (loading) return null // wait for auth to restore from localStorage
 
-  if (role && user.role !== role) {
-    return <Navigate to="/" />;
-  }
+  if (!user) return <Navigate to="/login" replace />
+
+  if (role && user.role !== role) return <Navigate to="/" replace />
 
   return children;
 };
