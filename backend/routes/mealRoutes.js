@@ -10,31 +10,16 @@ import {
 
 import { protect } from "../middleware/authMiddleware.js";
 import { authorize } from "../middleware/roleMiddleware.js";
+import { validate } from "../middleware/validate.js";
+import { mealSchema } from "../validation/mealValidation.js";
 
 const router = express.Router();
 
-// ================= PUBLIC =================
-
-// cutoff status for today (used by student dashboard)
 router.get("/cutoff-status", protect, getCutoffStatus);
-
-// ================= STUDENT =================
-
-// opt-in / opt-out meal (with cutoff enforcement)
-router.post("/opt", protect, optMeal);
-
-// get my meals
-router.get("/my", protect, getMyMeals);
-
-// refund summary
-router.get("/refund", protect, authorize("student"), getRefund);
-
-// ================= ADMIN / MANAGER =================
-
-// single-date meal counts
-router.get("/count", protect, authorize("admin", "mess_manager"), getMealCounts);
-
-// date-range report
-router.get("/report", protect, authorize("admin", "mess_manager"), getMealReport);
+router.post("/opt",    protect, validate(mealSchema), optMeal);
+router.get("/my",      protect, getMyMeals);
+router.get("/refund",  protect, authorize("student"), getRefund);
+router.get("/count",   protect, authorize("admin", "mess_manager"), getMealCounts);
+router.get("/report",  protect, authorize("admin", "mess_manager"), getMealReport);
 
 export default router;

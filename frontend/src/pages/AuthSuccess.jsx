@@ -1,31 +1,32 @@
 import React, { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CheckCircle, Loader2 } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
-import API from '@/api/axios'
 
 const AuthSuccess = () => {
   const navigate = useNavigate()
   const { login } = useAuth()
+  const [params] = useSearchParams()
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const token = params.get('token')
+    const userStr = params.get('user')
+
+    if (token && userStr) {
       try {
-        const res = await API.get("/auth/me")
-        if (res.data.success) {
-          login(res.data)
-          const role = res.data.user.role
-          setTimeout(() => {
-            if (role === "admin") navigate("/admin")
-            else if (role === "mess_manager") navigate("/manager")
-            else navigate("/student")
-          }, 1500)
-        }
+        const user = JSON.parse(decodeURIComponent(userStr))
+        login({ accessToken: token, user })
+        setTimeout(() => {
+          if (user.role === 'admin') navigate('/admin')
+          else if (user.role === 'mess_manager') navigate('/manager')
+          else navigate('/student')
+        }, 1000)
       } catch {
-        navigate("/login")
+        navigate('/login')
       }
+    } else {
+      navigate('/login')
     }
-    fetchUser()
   }, [])
 
   return (

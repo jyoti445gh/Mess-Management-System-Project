@@ -19,6 +19,7 @@ const ForgotPassword = () => {
     e.preventDefault()
     setError("")
     if (!email.trim()) return setError("Email is required")
+    if (!email.includes('@')) return setError("Email must contain @ symbol")
 
     try {
       setIsLoading(true)

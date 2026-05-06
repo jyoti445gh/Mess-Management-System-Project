@@ -4,7 +4,7 @@ import { WEEKLY_MENU } from '../data/weeklyMenuData.js';
 const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 const getDayName = (date) => DAYS[new Date(date).getDay()];
 
-// ================= CREATE MENU =================
+// CREATE MENU 
 export const createMenu = async (req, res) => {
   try {
     const { date, breakfast, lunch, dinner, isPublished } = req.body;
@@ -17,9 +17,9 @@ export const createMenu = async (req, res) => {
     const menu = await Menu.create({
       date: new Date(date),
       day: getDayName(date),
-      breakfast: breakfast || {},
-      lunch:     lunch     || {},
-      dinner:    dinner    || {},
+      breakfast: breakfast ?? '',
+      lunch:     lunch     ?? '',
+      dinner:    dinner    ?? '',
       createdBy: req.userId,
       isPublished: isPublished ?? false,
     });
@@ -30,7 +30,7 @@ export const createMenu = async (req, res) => {
   }
 };
 
-// ================= UPDATE MENU =================
+// UPDATE MENU 
 export const updateMenu = async (req, res) => {
   try {
     const { id } = req.params;
@@ -50,7 +50,7 @@ export const updateMenu = async (req, res) => {
   }
 };
 
-// ================= GET MENU BY DATE =================
+// GET MENU BY DATE 
 // Falls back to static weekly menu if no DB entry exists
 export const getMenuByDate = async (req, res) => {
   try {
@@ -78,7 +78,7 @@ export const getMenuByDate = async (req, res) => {
   }
 };
 
-// ================= GET ALL MENUS =================
+// GET ALL MENUS 
 export const getAllMenus = async (req, res) => {
   try {
     const menus = await Menu.find().sort({ date: -1 });
@@ -88,7 +88,7 @@ export const getAllMenus = async (req, res) => {
   }
 };
 
-// ================= GET WEEKLY MENU =================
+// GET WEEKLY MENU 
 // Returns static weekly menu merged with any DB overrides
 export const getWeeklyMenu = async (req, res) => {
   try {
@@ -120,6 +120,18 @@ export const getWeeklyMenu = async (req, res) => {
     });
 
     res.json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// DELETE MENU
+export const deleteMenu = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const menu = await Menu.findByIdAndDelete(id);
+    if (!menu) return res.status(404).json({ success: false, message: 'Menu not found' });
+    res.json({ success: true, message: 'Menu deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

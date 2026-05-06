@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { CalendarCheck, Coffee, Sun, Moon, RefreshCw, Utensils, IndianRupee, Clock, CalendarDays } from 'lucide-react'
+import { CalendarCheck, Coffee, Sun, Moon, RefreshCw, Utensils, IndianRupee, Clock, CalendarDays, PlaneTakeoff, Receipt } from 'lucide-react'
 import API from '@/api/axios'
 import { useAuth } from '@/context/AuthContext'
 import Navbar from '@/components/Navbar'
@@ -100,8 +100,20 @@ const StudentDashboard = () => {
   const [refund, setRefund] = useState(null)
   const [saving, setSaving] = useState(false)
 
+  // leave state
+  const [leaves, setLeaves] = useState([])
+  const [leaveForm, setLeaveForm] = useState({ startDate: '', endDate: '', reason: '' })
+  const [leaveSubmitting, setLeaveSubmitting] = useState(false)
+
+  // bill state
+  const [bills, setBills] = useState([])
+  const [billMonth, setBillMonth] = useState(() => {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  })
+
   useEffect(() => { fetchMeal(); fetchMenu(); fetchCutoff() }, [date])
-  useEffect(() => { fetchHistory(); fetchRefund() }, [])
+  useEffect(() => { fetchHistory(); fetchRefund(); fetchMyLeaves(); fetchMyBills() }, [])
 
   const fetchCutoff = async () => {
     try { const res = await API.get('/meals/cutoff-status'); setCutoff(res.data.data) } catch { }
@@ -132,6 +144,26 @@ const StudentDashboard = () => {
 
   const fetchRefund = async () => {
     try { const res = await API.get('/meals/refund'); setRefund(res.data.data) } catch { }
+  }
+
+  const fetchMyLeaves = async () => {
+    try { const res = await API.get('/leave/my'); setLeaves(res.data.data) } catch { }
+  }
+
+  const fetchMyBills = async () => {
+    try { const res = await API.get('/bills/my'); setBills(res.data.data) } catch { }
+  }
+
+  const handleLeaveSubmit = async () => {
+    if (!leaveForm.startDate || !leaveForm.endDate) return toast.error('Please select start and end dates')
+    try {
+      setLeaveSubmitting(true)
+      await API.post('/leave/apply', leaveForm)
+      toast.success('Leave request submitted! Admin will review it.')
+      setLeaveForm({ startDate: '', endDate: '', reason: '' })
+      fetchMyLeaves()
+    } catch (e) { toast.error(e.response?.data?.message || 'Failed to submit leave') }
+    finally { setLeaveSubmitting(false) }
   }
 
   const handleSave = async () => {
@@ -215,8 +247,7 @@ const StudentDashboard = () => {
                     <div key={key} onClick={() => toggle(key)}
                       className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
                         disabled ? 'bg-gray-50 border-gray-200 opacity-60 cursor-not-allowed'
-                          : opts[key] ? 'bg-green-50 border-green-300 cursor-pointer'
-                          : 'bg-gray-50 border-gray-200 opacity-60 cursor-pointer'
+                          : 'bg-white border-gray-200 hover:border-green-300 cursor-pointer'
                       }`}>
                       <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${opts[key] && !disabled ? 'bg-green-100' : 'bg-gray-100'}`}>
@@ -230,7 +261,11 @@ const StudentDashboard = () => {
                       <div className="flex items-center gap-2">
                         {disabled
                           ? <span className="flex items-center gap-1 text-xs text-amber-600"><Clock className="w-3 h-3" /> Cutoff passed</span>
-                          : <Badge variant={opts[key] ? 'default' : 'secondary'} className={opts[key] ? 'bg-green-600' : ''}>{opts[key] ? 'Opted In' : 'Opted Out'}</Badge>
+                          : (
+                            <div className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${opts[key] ? 'bg-green-500' : 'bg-gray-300'}`}>
+                              <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${opts[key] ? 'translate-x-6' : 'translate-x-1'}`} />
+                            </div>
+                          )
                         }
                       </div>
                     </div>
@@ -342,6 +377,159 @@ const StudentDashboard = () => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Leave Section */}
+        <div className="grid md:grid-cols-2 gap-6">
+
+          {/* Apply Leave */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <PlaneTakeoff className="w-4 h-4 text-blue-600" /> Apply for Leave
+              </CardTitle>
+              <CardDescription>Going home? Submit a request — meals will be turned off after admin approval.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-600">Start Date</label>
+                <input type="date" value={leaveForm.startDate} min={todayStr()}
+                  onChange={e => setLeaveForm(p => ({ ...p, startDate: e.target.value }))}
+                  className="w-full h-9 rounded-lg border border-input bg-transparent px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-600">End Date</label>
+                <input type="date" value={leaveForm.endDate} min={leaveForm.startDate || todayStr()}
+                  onChange={e => setLeaveForm(p => ({ ...p, endDate: e.target.value }))}
+                  className="w-full h-9 rounded-lg border border-input bg-transparent px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-600">Reason (optional)</label>
+                <textarea value={leaveForm.reason} rows={2}
+                  onChange={e => setLeaveForm(p => ({ ...p, reason: e.target.value }))}
+                  placeholder="e.g. Going home for vacation"
+                  className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
+              </div>
+              <Button onClick={handleLeaveSubmit} disabled={leaveSubmitting} className="w-full bg-blue-600 hover:bg-blue-700">
+                {leaveSubmitting ? 'Submitting...' : 'Submit Leave Request'}
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* My Leave History */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <CalendarDays className="w-4 h-4 text-blue-600" /> My Leave Requests
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {leaves.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No leave requests yet</p>
+              ) : (
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                  {leaves.map(l => (
+                    <div key={l._id} className="flex items-start justify-between p-3 rounded-xl border bg-white gap-3">
+                      <div>
+                        <p className="text-sm font-medium text-gray-800">
+                          {new Date(l.startDate).toLocaleDateString()} → {new Date(l.endDate).toLocaleDateString()}
+                        </p>
+                        {l.reason && <p className="text-xs text-muted-foreground mt-0.5">{l.reason}</p>}
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Applied: {new Date(l.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <span className={`shrink-0 text-xs px-2 py-1 rounded-full font-medium border ${
+                        l.status === 'approved' ? 'bg-green-50 text-green-700 border-green-200' :
+                        l.status === 'rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                        'bg-amber-50 text-amber-700 border-amber-200'
+                      }`}>
+                        {l.status.charAt(0).toUpperCase() + l.status.slice(1)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+        </div>
+
+        {/* My Bills */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Receipt className="w-4 h-4 text-purple-600" /> My Monthly Bills
+            </CardTitle>
+            <CardDescription>View your mess bill for each month</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-3">
+              <input type="month" value={billMonth}
+                onChange={e => setBillMonth(e.target.value)}
+                className="h-9 rounded-lg border border-input bg-transparent px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+              <Button size="sm" variant="outline"
+                onClick={async () => {
+                  try {
+                    const [y, m] = billMonth.split('-')
+                    const res = await API.get(`/bills/my?month=${m}&year=${y}`)
+                    setBills(res.data.data)
+                  } catch { toast.error('Failed to fetch bill') }
+                }}>
+                View Bill
+              </Button>
+            </div>
+
+            {bills.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">No bill generated yet for this month</p>
+            ) : (
+              <div className="space-y-3">
+                {bills.map(b => {
+                  const monthName = new Date(b.year, b.month - 1).toLocaleString('default', { month: 'long' })
+                  return (
+                    <div key={b._id} className="rounded-xl border bg-white overflow-hidden">
+                      {/* Bill header */}
+                      <div className="flex items-center justify-between px-4 py-3 bg-purple-50 border-b">
+                        <div>
+                          <p className="text-sm font-semibold text-purple-800">{monthName} {b.year}</p>
+                          <p className="text-xs text-purple-600">Mess Bill</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium border ${
+                            b.isPaid ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'
+                          }`}>
+                            {b.isPaid ? 'Paid' : 'Unpaid'}
+                          </span>
+                          <span className="text-lg font-bold text-purple-700 flex items-center gap-0.5">
+                            <IndianRupee className="w-4 h-4" />{b.totalAmount}
+                          </span>
+                        </div>
+                      </div>
+                      {/* Breakdown */}
+                      <div className="grid grid-cols-3 divide-x text-center py-3">
+                        {[
+                          { label: 'Breakfast', count: b.breakfastCount, cost: b.breakfastCost, color: 'text-amber-600' },
+                          { label: 'Lunch',     count: b.lunchCount,     cost: b.lunchCost,     color: 'text-orange-600' },
+                          { label: 'Dinner',    count: b.dinnerCount,    cost: b.dinnerCost,    color: 'text-indigo-600' },
+                        ].map(({ label, count, cost, color }) => (
+                          <div key={label} className="px-2">
+                            <p className={`text-xs font-medium ${color}`}>{label}</p>
+                            <p className="text-sm font-bold text-gray-800">{count} meals</p>
+                            <p className="text-xs text-muted-foreground">₹{cost}</p>
+                          </div>
+                        ))}
+                      </div>
+                      {b.isPaid && b.paidAt && (
+                        <p className="text-xs text-green-600 text-center pb-2">
+                          Paid on {new Date(b.paidAt).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </CardContent>

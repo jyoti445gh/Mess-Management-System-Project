@@ -1,14 +1,14 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-console.log("CLIENT ID:", process.env.GOOGLE_CLIENT_ID);
+import dotenv from "dotenv";
+dotenv.config(); // must load before reading process.env
 import User from "../models/userModel.js";
-import { ENV } from "./env.js";
 
 passport.use(
   new GoogleStrategy(
     {
-      clientID: process.env.GOOGLE_CLIENT_ID_2,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET_2,
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: "http://localhost:8000/api/auth/google/callback",
     },
     async (accessToken, refreshToken, profile, done) => {
@@ -36,7 +36,7 @@ passport.use(
 );
 
 
-// ================= SESSION HANDLING =================
+// SESSION HANDLING
 
 // store user id in session
 passport.serializeUser((user, done) => {

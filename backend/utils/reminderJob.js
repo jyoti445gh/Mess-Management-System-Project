@@ -1,15 +1,16 @@
 import cron from "node-cron";
 import User from "../models/userModel.js";
 import { transporter } from "./mailer.js";
+import { logger } from "./logger.js";
 
 const sendReminders = async (mealType, cutoffTime) => {
-  console.log(`[Reminder] Sending ${mealType} reminders...`);
+  logger.info(`Sending ${mealType} reminders...`);
 
   let students;
   try {
     students = await User.find({ role: "student", isVerified: true });
   } catch (err) {
-    console.error(`[Reminder] Failed to fetch students: ${err.message}`);
+    logger.error(`Failed to fetch students: ${err.message}`);
     return;
   }
 
@@ -31,11 +32,11 @@ const sendReminders = async (mealType, cutoffTime) => {
       });
       sent++;
     } catch (err) {
-      console.error(`[Reminder] Failed to send to ${student.email}: ${err.message}`);
+      logger.error(`Failed to send to ${student.email}: ${err.message}`);
     }
   }
 
-  console.log(`[Reminder] ${mealType} reminders sent: ${sent}/${students.length}`);
+  logger.success(`${mealType} reminders sent: ${sent}/${students.length}`);
 };
 
 // 06:30 — 30 min before breakfast cutoff (07:00)
@@ -47,4 +48,4 @@ cron.schedule("30 11 * * *", () => sendReminders("lunch", "12:00"));
 // 18:30 — 30 min before dinner cutoff (19:00)
 cron.schedule("30 18 * * *", () => sendReminders("dinner", "19:00"));
 
-console.log("[Reminder] Notification cron jobs scheduled (06:30, 11:30, 18:30)");
+logger.info("Notification cron jobs scheduled (06:30, 11:30, 18:30)");

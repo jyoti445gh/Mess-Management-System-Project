@@ -25,6 +25,7 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!formData.email.trim()) return toast.error("Email is required")
+    if (!formData.email.includes('@')) return toast.error("Email must contain @ symbol")
     if (!formData.password.trim()) return toast.error("Password is required")
 
     try {
@@ -41,7 +42,7 @@ const Login = () => {
         const role = res.data.user.role
         if (role === "admin") navigate("/admin")
         else if (role === "mess_manager") navigate("/manager")
-        else navigate("/student")
+        else navigate("/student") // student and mess_committee both go to /student
       }
     } catch (error) {
       const msg = error.response?.data?.message || "Login failed. Try again."

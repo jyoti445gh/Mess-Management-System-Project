@@ -22,7 +22,7 @@ const updateProfileSchema = Joi.object({
 });
 
 const updateRoleSchema = Joi.object({
-  role: Joi.string().valid("student", "admin", "mess_manager").required(),
+  role: Joi.string().valid("student", "mess_committee", "mess_manager").required(),
 });
 
 // ================= USER =================

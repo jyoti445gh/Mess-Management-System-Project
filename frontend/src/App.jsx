@@ -31,7 +31,7 @@ const router = createBrowserRouter([
   {
     path: '/student',
     element: (
-      <ProtectedRoute role="student">
+      <ProtectedRoute role={['student', 'mess_committee']}>
         <StudentDashboard />
       </ProtectedRoute>
     ),

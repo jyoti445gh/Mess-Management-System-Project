@@ -75,18 +75,24 @@ router.get(
     session: false,
   }),
   (req, res) => {
-    // 👉 generate JWT here
-    const jwt = require("jsonwebtoken");
+    import("jsonwebtoken").then(({ default: jwt }) => {
+      const token = jwt.sign(
+        { id: req.user._id, role: req.user.role },
+        process.env.SECRET_KEY,
+        { expiresIn: "10d" }
+      );
 
-    const token = jwt.sign(
-      { id: req.user._id, role: req.user.role },
-      process.env.SECRET_KEY
-    );
+      // Create session
+      import("../models/sessionModel.js").then(({ Session }) => {
+        Session.create({
+          userId: req.user._id,
+          token,
+          expiresAt: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+        }).catch(err => console.error("Session create error:", err));
+      });
 
-    return res.json({
-      success: true,
-      token,
-      user: req.user,
+      // Redirect to frontend with token
+      res.redirect(`http://localhost:5173/auth-success?token=${token}&user=${encodeURIComponent(JSON.stringify({ _id: req.user._id, name: req.user.name, email: req.user.email, role: req.user.role }))}`);
     });
   }
 );

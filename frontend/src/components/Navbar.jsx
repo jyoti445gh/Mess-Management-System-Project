@@ -33,7 +33,7 @@ const Navbar = () => {
   const goDashboard = () => {
     if (user.role === "admin") navigate("/admin");
     else if (user.role === "mess_manager") navigate("/manager");
-    else navigate("/student");
+    else navigate("/student"); // student and mess_committee
   };
 
   return (

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
-import { Coffee, Sun, Moon, Users, PlusCircle, Pencil, Utensils, BarChart3 } from 'lucide-react'
+import { Coffee, Sun, Moon, Users, PlusCircle, Pencil, Utensils, BarChart3, Trash2 } from 'lucide-react'
 import API from '@/api/axios'
 import Navbar from '@/components/Navbar'
 
@@ -76,6 +76,17 @@ const ManagerDashboard = () => {
     })
     setShowForm(true)
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleDelete = async (id) => {
+    if (!confirm('Delete this menu? This cannot be undone.')) return
+    try {
+      await API.delete(`/menu/${id}`)
+      toast.success('Menu deleted')
+      fetchMenus()
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Failed to delete menu')
+    }
   }
 
   const fetchReport = async () => {
@@ -201,9 +212,15 @@ const ManagerDashboard = () => {
                         🌅 {menu.breakfast} &nbsp;|&nbsp; ☀️ {menu.lunch} &nbsp;|&nbsp; 🌙 {menu.dinner}
                       </p>
                     </div>
-                    <Button size="sm" variant="ghost" onClick={() => startEdit(menu)}>
-                      <Pencil className="w-3.5 h-3.5" />
-                    </Button>
+                    <div className="flex items-center gap-1 shrink-0 ml-2">
+                      <Button size="sm" variant="ghost" onClick={() => startEdit(menu)}>
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleDelete(menu._id)}
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>

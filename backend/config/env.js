@@ -7,8 +7,9 @@ export const ENV = {
   MONGO_URI: process.env.MONGO_URI,
   JWT_SECRET: process.env.SECRET_KEY,
 
-  EMAIL_USER: process.env.EMAIL_USER,
-  EMAIL_PASS: process.env.EMAIL_PASS,
+  EMAIL_USER: process.env.MAIL_USER,
+  EMAIL_PASS: process.env.MAIL_PASS,
+  ADMIN_EMAIL: process.env.ADMIN_EMAIL,
 
   NODE_ENV: process.env.NODE_ENV || "development",
 };

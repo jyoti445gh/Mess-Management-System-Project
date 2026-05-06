@@ -24,6 +24,9 @@ const Signup = () => {
     if (!formData.name || !formData.email || !formData.password) {
       return toast.error("All fields are required")
     }
+    if (!formData.email.includes('@')) {
+      return toast.error("Email must contain @ symbol")
+    }
 
     try {
       setIsLoading(true)
@@ -65,7 +68,7 @@ const Signup = () => {
                 <Input
                   id="name"
                   name="name"
-                  placeholder="John Doe"
+                  placeholder="Jyoti Nehara"
                   onChange={handleChange}
                   className="h-10"
                 />
@@ -77,7 +80,7 @@ const Signup = () => {
                   id="email"
                   type="email"
                   name="email"
-                  placeholder="you@example.com"
+                  placeholder="jyoti@gmail.com"
                   onChange={handleChange}
                   className="h-10"
                 />

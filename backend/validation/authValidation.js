@@ -1,33 +1,94 @@
 import Joi from "joi";
 
-// ================= REGISTER =================
+// No SQL/NoSQL injection chars allowed in name
+const namePattern = /^[a-zA-Z\s'-]+$/;
+
+// Strong password: min 6 chars (letters + numbers recommended)
+const passwordPattern = /^(?=.*[a-zA-Z])(?=.*\d).{6,}$/;
+
+//  REGISTER 
 export const registerSchema = Joi.object({
-  name: Joi.string().min(3).max(50).required(),
-  email: Joi.string().email().required(),
-  password: Joi.string().min(6).required(),
+  name: Joi.string()
+    .min(3).max(50)
+    .pattern(namePattern)
+    .required()
+    .messages({
+      'string.pattern.base': 'Name can only contain letters, spaces, hyphens and apostrophes',
+      'string.min': 'Name must be at least 3 characters',
+      'string.max': 'Name cannot exceed 50 characters',
+    }),
+
+  email: Joi.string()
+    .email({ tlds: { allow: false } })
+    .max(100)
+    .lowercase()
+    .required()
+    .messages({
+      'string.email': 'Email must contain @ symbol and be a valid email address',
+      'string.empty': 'Email is required',
+    }),
+
+  password: Joi.string()
+    .min(6).max(128)
+    .pattern(passwordPattern)
+    .required()
+    .messages({
+      'string.pattern.base': 'Password must contain at least one letter and one number',
+      'string.min': 'Password must be at least 6 characters',
+    }),
 });
 
-
-// ================= LOGIN =================
+// LOGIN 
 export const loginSchema = Joi.object({
-  email: Joi.string().email().required(),
-  password: Joi.string().required(),
+  email: Joi.string()
+    .email({ tlds: { allow: false } })
+    .max(100)
+    .lowercase()
+    .required()
+    .messages({
+      'string.email': 'Email must contain @ symbol and be a valid email address',
+      'string.empty': 'Email is required',
+    }),
+
+  password: Joi.string()
+    .min(1).max(128)
+    .required()
+    .messages({ 'string.empty': 'Password is required' }),
 });
 
-
-// ================= FORGOT PASSWORD =================
+// FORGOT PASSWORD 
 export const forgotSchema = Joi.object({
-  email: Joi.string().email().required(),
+  email: Joi.string()
+    .email({ tlds: { allow: false } })
+    .max(100)
+    .lowercase()
+    .required()
+    .messages({
+      'string.email': 'Email must contain @ symbol and be a valid email address',
+      'string.empty': 'Email is required',
+    }),
 });
 
-
-// ================= VERIFY OTP =================
+//VERIFY OTP 
 export const otpSchema = Joi.object({
-  otp: Joi.string().length(6).required(),
+  otp: Joi.string()
+    .length(6)
+    .pattern(/^\d{6}$/)
+    .required()
+    .messages({
+      'string.length': 'OTP must be exactly 6 digits',
+      'string.pattern.base': 'OTP must contain only digits',
+    }),
 });
 
-
-// ================= CHANGE PASSWORD =================
+// CHANGE PASSWORD 
 export const changePasswordSchema = Joi.object({
-  newPassword: Joi.string().min(6).required(),
+  newPassword: Joi.string()
+    .min(6).max(128)
+    .pattern(passwordPattern)
+    .required()
+    .messages({
+      'string.pattern.base': 'Password must contain at least one letter and one number',
+      'string.min': 'Password must be at least 6 characters',
+    }),
 });

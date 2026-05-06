@@ -3,8 +3,9 @@ import { Session } from "../models/sessionModel.js";
 import User from "../models/userModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { logger } from "../utils/logger.js";
 
-// ================= REGISTER =================
+// REGISTER 
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.validatedData;
@@ -32,6 +33,7 @@ export const registerUser = async (req, res) => {
 
     // Send OTP to user's email
     await sendOtpMail(email, otp);
+    logger.success(`User registered: ${email}`);
 
     return res.status(201).json({
       success: true,
@@ -43,7 +45,7 @@ export const registerUser = async (req, res) => {
   }
 };
 
-// ================= VERIFY OTP (for registration and forgot password) =================
+// VERIFY OTP (for registration and forgot password)
 export const verifyOTP = async (req, res) => {
   try {
     const { otp } = req.validatedData;
@@ -68,7 +70,7 @@ export const verifyOTP = async (req, res) => {
   }
 };
 
-// ================= LOGIN =================
+// LOGIN
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.validatedData;
@@ -108,6 +110,8 @@ export const loginUser = async (req, res) => {
       expiresAt: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
     });
 
+    logger.success(`User logged in: ${email} (${user.role})`);
+
     return res.json({
       success: true,
       accessToken,
@@ -120,10 +124,11 @@ export const loginUser = async (req, res) => {
   }
 };
 
-// ================= LOGOUT =================
+//LOGOUT
 export const logoutUser = async (req, res) => {
   try {
     await Session.deleteMany({ userId: req.userId });
+    logger.info(`User logged out: ${req.userId}`);
 
     return res.json({
       success: true,
@@ -135,7 +140,7 @@ export const logoutUser = async (req, res) => {
   }
 };
 
-// ================= FORGOT PASSWORD =================
+// FORGOT PASSWORD
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.validatedData;
@@ -161,7 +166,7 @@ export const forgotPassword = async (req, res) => {
   }
 };
 
-// ================= CHANGE PASSWORD =================
+// CHANGE PASSWORD
 export const changePassword = async (req, res) => {
   try {
     const { newPassword } = req.validatedData;
@@ -184,11 +189,11 @@ export const changePassword = async (req, res) => {
   }
 };
 
-// ================= EMAIL VERIFICATION =================
+// EMAIL VERIFICATION
 export const verification = async (req, res) => {
   try {
     const token = req.query.token;
-
+   
     if (!token) {
       return res.status(400).json({ success: false, message: "Token is required" });
     }

@@ -1,8 +1,7 @@
 import Meal from "../models/mealModel.js";
 import { CUTOFF_TIMES, MEAL_COSTS } from "../config/constants.js";
 
-// ─── helpers ────────────────────────────────────────────────────────────────
-
+//  helpers 
 /**
  * Returns true if the cutoff for `mealType` has already passed today.
  */
@@ -21,9 +20,9 @@ const isPastDate = (date) => {
   return date < today;
 };
 
-// ─── controllers ────────────────────────────────────────────────────────────
+//controllers 
 
-// ================= OPT MEAL (with cutoff enforcement) =================
+//OPT MEAL (with cutoff enforcement)
 export const optMeal = async (req, res) => {
   try {
     const userId = req.userId;
@@ -78,7 +77,7 @@ export const optMeal = async (req, res) => {
   }
 };
 
-// ================= GET MY MEALS =================
+//GET MY MEALS
 export const getMyMeals = async (req, res) => {
   try {
     const meals = await Meal.find({ userId: req.userId }).sort({ date: -1 });
@@ -88,11 +87,17 @@ export const getMyMeals = async (req, res) => {
   }
 };
 
-// ================= GET MEAL COUNT (single date) =================
+//GET MEAL COUNT (single date) 
 export const getMealCounts = async (req, res) => {
   try {
     const { date } = req.query;
-    const meals = await Meal.find({ date: new Date(date) });
+    // Query the full day range to avoid timezone issues
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(date);
+    end.setHours(23, 59, 59, 999);
+
+    const meals = await Meal.find({ date: { $gte: start, $lte: end } });
 
     const counts = { breakfast: 0, lunch: 0, dinner: 0 };
     meals.forEach((m) => {
@@ -107,7 +112,7 @@ export const getMealCounts = async (req, res) => {
   }
 };
 
-// ================= CUTOFF STATUS =================
+//CUTOFF STATUS 
 export const getCutoffStatus = async (req, res) => {
   try {
     const status = {
@@ -121,7 +126,7 @@ export const getCutoffStatus = async (req, res) => {
   }
 };
 
-// ================= REFUND SERVICE =================
+//REFUND SERVICE
 export const getRefund = async (req, res) => {
   try {
     const meals = await Meal.find({ userId: req.userId });
@@ -146,7 +151,7 @@ export const getRefund = async (req, res) => {
   }
 };
 
-// ================= DATE-RANGE REPORT =================
+// DATE-RANGE REPORT
 export const getMealReport = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
@@ -175,10 +180,12 @@ export const getMealReport = async (req, res) => {
     end.setHours(23, 59, 59, 999);
     const meals = await Meal.find({ date: { $gte: start, $lte: end } });
 
-    // Build per-day map
+    // Build per-day map — use local date to avoid UTC timezone shift
     const dayMap = {};
     meals.forEach((m) => {
-      const key = m.date.toISOString().split("T")[0];
+      const d = new Date(m.date);
+      // Format as YYYY-MM-DD in local time
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       if (!dayMap[key]) dayMap[key] = { breakfast: 0, lunch: 0, dinner: 0 };
       if (m.breakfast) dayMap[key].breakfast++;
       if (m.lunch)     dayMap[key].lunch++;
