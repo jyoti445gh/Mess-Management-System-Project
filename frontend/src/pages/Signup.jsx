@@ -8,6 +8,11 @@ import { toast } from 'sonner'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
+// Green focus style applied to all inputs on this page
+const inputCls = "h-10 focus-visible:border-green-500 focus-visible:ring-3 focus-visible:ring-green-500/30"
+
+const WEAK_PASSWORDS = ["password", "123456", "password1", "qwerty", "abc123", "letmein", "welcome", "monkey", "dragon", "master"]
+
 const Signup = () => {
   const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
@@ -19,6 +24,17 @@ const Signup = () => {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
+  const validatePassword = (pw) => {
+    if (!pw) return "Password is required"
+    if (pw.length < 6) return "Password must be at least 6 characters"
+    if (!/[A-Z]/.test(pw)) return "Password must contain at least one uppercase letter"
+    if (!/[a-z]/.test(pw)) return "Password must contain at least one lowercase letter"
+    if (!/\d/.test(pw)) return "Password must contain at least one number"
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pw)) return "Password must contain at least one special character (!@#$…)"
+    if (WEAK_PASSWORDS.includes(pw.toLowerCase())) return "Password is too common. Please choose a stronger password"
+    return null
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!formData.name || !formData.email || !formData.password) {
@@ -27,13 +43,15 @@ const Signup = () => {
     if (!formData.email.includes('@')) {
       return toast.error("Email must contain @ symbol")
     }
+    const pwError = validatePassword(formData.password)
+    if (pwError) return toast.error(pwError)
 
     try {
       setIsLoading(true)
       const res = await axios.post("http://localhost:8000/api/auth/register", formData)
       if (res.data.success) {
         toast.success(res.data.message)
-        navigate(`/verify-otp/${formData.email}`)
+        navigate(`/verify-otp/${formData.email}?type=registration`)
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Registration failed")
@@ -63,6 +81,8 @@ const Signup = () => {
 
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
+
+              {/* Full Name */}
               <div className="space-y-1.5">
                 <Label htmlFor="name">Full Name</Label>
                 <Input
@@ -70,10 +90,11 @@ const Signup = () => {
                   name="name"
                   placeholder="Jyoti Nehara"
                   onChange={handleChange}
-                  className="h-10"
+                  className={inputCls}
                 />
               </div>
 
+              {/* Email */}
               <div className="space-y-1.5">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -82,10 +103,11 @@ const Signup = () => {
                   name="email"
                   placeholder="jyoti@gmail.com"
                   onChange={handleChange}
-                  className="h-10"
+                  className={inputCls}
                 />
               </div>
 
+              {/* Password */}
               <div className="space-y-1.5">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
@@ -95,7 +117,7 @@ const Signup = () => {
                     name="password"
                     placeholder="Create a password"
                     onChange={handleChange}
-                    className="h-10 pr-10"
+                    className={`${inputCls} pr-10`}
                   />
                   <button
                     type="button"
@@ -106,11 +128,13 @@ const Signup = () => {
                   </button>
                 </div>
               </div>
-            </CardContent>
 
+            </CardContent>
             <CardFooter className="flex flex-col gap-3 pt-2">
               <Button type="submit" disabled={isLoading} className="w-full bg-green-600 hover:bg-green-700 h-10">
-                {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating account...</> : "Create account"}
+                {isLoading
+                  ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating account...</>
+                  : "Create account"}
               </Button>
 
               <p className="text-sm text-center text-gray-500">
@@ -120,6 +144,7 @@ const Signup = () => {
             </CardFooter>
           </form>
         </Card>
+
       </div>
     </div>
   )

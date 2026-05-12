@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { CheckCircle, Loader2, RotateCcw, ShieldCheck } from 'lucide-react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import axios from 'axios'
 
@@ -16,6 +16,11 @@ const VerifyOTP = () => {
   const inputRefs = useRef([])
   const { email } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
+  // If ?type=registration, redirect to /login after verify
+  // Otherwise (forgot password flow), redirect to /change-password
+  const isRegistration = searchParams.get('type') === 'registration'
 
   const handleChange = (index, value) => {
     if (!/^\d?$/.test(value)) return
@@ -41,7 +46,11 @@ const VerifyOTP = () => {
       const res = await axios.post(`http://localhost:8000/api/auth/verify-otp/${email}`, { otp: finalOtp })
       toast.success(res.data.message)
       setIsVerified(true)
-      setTimeout(() => navigate(`/change-password/${email}`), 1500)
+      if (isRegistration) {
+        setTimeout(() => navigate(`/change-password/${email}?type=registration`), 1500)
+      } else {
+        setTimeout(() => navigate(`/change-password/${email}`), 1500)
+      }
     } catch (error) {
       setError(error.response?.data?.message || "Invalid OTP")
     } finally {
@@ -57,8 +66,12 @@ const VerifyOTP = () => {
 
   const resendOtp = async () => {
     try {
-      const res = await axios.post("http://localhost:8000/api/auth/forgot-password", { email })
-      toast.success(res.data.message)
+      const endpoint = isRegistration
+        ? `http://localhost:8000/api/auth/resend-otp/${email}`
+        : "http://localhost:8000/api/auth/forgot-password"
+      const body = isRegistration ? {} : { email }
+      const res = await axios.post(endpoint, body)
+      toast.success(res.data.message || "OTP resent successfully")
     } catch {
       toast.error("Failed to resend OTP")
     }
@@ -76,13 +89,18 @@ const VerifyOTP = () => {
           <p className="text-sm text-gray-500">
             We sent a 6-digit code to <span className="font-medium text-gray-700">{email}</span>
           </p>
+          <p className="text-xs text-gray-400">
+            {isRegistration ? 'Verify your email to complete registration' : 'Enter the code to reset your password'}
+          </p>
         </div>
 
         <Card className="shadow-xl border-0 ring-1 ring-gray-100">
           <CardHeader className="pb-4">
             <CardTitle className="text-lg">Enter OTP</CardTitle>
             <CardDescription>
-              {isVerified ? "Verification successful! Redirecting..." : "Enter the code from your email"}
+              {isVerified
+                ? isRegistration ? "Email verified! Redirecting to login..." : "Verified! Redirecting..."
+                : "Enter the 6-digit code from your email"}
             </CardDescription>
           </CardHeader>
 
@@ -93,12 +111,14 @@ const VerifyOTP = () => {
               </Alert>
             )}
 
-            {isVerified ? (
+              {isVerified ? (
               <div className="flex flex-col items-center gap-3 py-6">
                 <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center">
                   <CheckCircle className="text-green-600 w-8 h-8" />
                 </div>
-                <p className="text-sm text-gray-600">Redirecting to change password...</p>
+                <p className="text-sm text-gray-600">
+                  {isRegistration ? 'OTP verified! Redirecting to set password...' : 'Redirecting to change password...'}
+                </p>
                 <Loader2 className="animate-spin w-4 h-4 text-green-600" />
               </div>
             ) : (
@@ -138,7 +158,9 @@ const VerifyOTP = () => {
           <CardFooter className="flex justify-center">
             <p className="text-sm text-gray-500">
               Wrong email?{" "}
-              <Link to="/forgot-password" className="text-green-600 hover:underline">Go back</Link>
+              <Link to={isRegistration ? "/signup" : "/forgot-password"} className="text-green-600 hover:underline">
+                Go back
+              </Link>
             </p>
           </CardFooter>
         </Card>
