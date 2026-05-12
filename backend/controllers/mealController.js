@@ -1,5 +1,6 @@
 import Meal from "../models/mealModel.js";
 import { CUTOFF_TIMES, MEAL_COSTS } from "../config/constants.js";
+import { logger } from "../utils/logger.js";
 
 //  helpers 
 /**
@@ -66,13 +67,16 @@ export const optMeal = async (req, res) => {
       meal.lunch     = lunch     ?? meal.lunch;
       meal.dinner    = dinner    ?? meal.dinner;
       await meal.save();
+      logger.info(`Meal updated: userId=${userId} date=${date}`);
       return res.json({ success: true, message: "Meal updated", data: meal });
     }
 
     meal = await Meal.create({ userId, date: selectedDate, breakfast, lunch, dinner });
+    logger.success(`Meal opted: userId=${userId} date=${date}`);
     return res.status(201).json({ success: true, message: "Meal opted successfully", data: meal });
 
   } catch (error) {
+    logger.error("optMeal failed", { error: error.message, userId: req.userId });
     return res.status(500).json({ success: false, message: error.message });
   }
 };

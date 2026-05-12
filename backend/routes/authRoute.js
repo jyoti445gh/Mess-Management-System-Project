@@ -9,6 +9,7 @@ import {
   forgotPassword,
   verifyOTP,
   changePassword,
+  resendOtp,
 } from "../controllers/authController.js";
 
 import { validate } from "../middleware/validate.js";
@@ -47,6 +48,9 @@ router.post("/forgot-password", validate(forgotSchema), forgotPassword);
 
 // verify OTP
 router.post("/verify-otp/:email", validate(otpSchema), verifyOTP);
+
+// resend OTP (registration)
+router.post("/resend-otp/:email", resendOtp);
 
 // change password
 router.post(

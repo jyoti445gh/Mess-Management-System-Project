@@ -3,8 +3,16 @@ import Joi from "joi";
 // No SQL/NoSQL injection chars allowed in name
 const namePattern = /^[a-zA-Z\s'-]+$/;
 
-// Strong password: min 6 chars (letters + numbers recommended)
-const passwordPattern = /^(?=.*[a-zA-Z])(?=.*\d).{6,}$/;
+// Strong password:
+// - min 6 chars
+// - at least one uppercase letter
+// - at least one lowercase letter
+// - at least one number
+// - at least one special character
+// - not a common weak password
+const WEAK_PASSWORDS = ["password", "123456", "password1", "qwerty", "abc123", "letmein", "welcome", "monkey", "dragon", "master"];
+
+const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{6,}$/;
 
 //  REGISTER 
 export const registerSchema = Joi.object({
@@ -32,9 +40,16 @@ export const registerSchema = Joi.object({
     .min(6).max(128)
     .pattern(passwordPattern)
     .required()
+    .custom((value, helpers) => {
+      if (WEAK_PASSWORDS.includes(value.toLowerCase())) {
+        return helpers.error('password.weak');
+      }
+      return value;
+    })
     .messages({
-      'string.pattern.base': 'Password must contain at least one letter and one number',
+      'string.pattern.base': 'Password must contain uppercase, lowercase, a number, and a special character',
       'string.min': 'Password must be at least 6 characters',
+      'password.weak': 'Password is too common. Please choose a stronger password',
     }),
 });
 
@@ -87,8 +102,15 @@ export const changePasswordSchema = Joi.object({
     .min(6).max(128)
     .pattern(passwordPattern)
     .required()
+    .custom((value, helpers) => {
+      if (WEAK_PASSWORDS.includes(value.toLowerCase())) {
+        return helpers.error('password.weak');
+      }
+      return value;
+    })
     .messages({
-      'string.pattern.base': 'Password must contain at least one letter and one number',
+      'string.pattern.base': 'Password must contain uppercase, lowercase, a number, and a special character',
       'string.min': 'Password must be at least 6 characters',
+      'password.weak': 'Password is too common. Please choose a stronger password',
     }),
 });

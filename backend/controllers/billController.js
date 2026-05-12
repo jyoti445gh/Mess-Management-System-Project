@@ -2,6 +2,7 @@ import Bill from "../models/billModel.js";
 import Meal from "../models/mealModel.js";
 import User from "../models/userModel.js";
 import { MEAL_COSTS } from "../config/constants.js";
+import { logger } from "../utils/logger.js";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -50,8 +51,10 @@ export const generateBills = async (req, res) => {
       results.push(bill);
     }
 
+    logger.success(`Bills generated: ${results.length} students | ${month}/${year}`);
     return res.json({ success: true, message: `Bills generated for ${results.length} students`, data: results });
   } catch (error) {
+    logger.error("generateBills failed", { error: error.message });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -97,8 +100,10 @@ export const markPaid = async (req, res) => {
     ).populate("studentId", "name email");
 
     if (!bill) return res.status(404).json({ success: false, message: "Bill not found" });
+    logger.success(`Bill marked paid: ${bill.studentId?.email} | ₹${bill.totalAmount}`);
     return res.json({ success: true, message: "Bill marked as paid", data: bill });
   } catch (error) {
+    logger.error("markPaid failed", { error: error.message, billId: req.params.id });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -113,8 +118,10 @@ export const markUnpaid = async (req, res) => {
     ).populate("studentId", "name email");
 
     if (!bill) return res.status(404).json({ success: false, message: "Bill not found" });
+    logger.info(`Bill marked unpaid: ${bill.studentId?.email}`);
     return res.json({ success: true, message: "Bill marked as unpaid", data: bill });
   } catch (error) {
+    logger.error("markUnpaid failed", { error: error.message, billId: req.params.id });
     return res.status(500).json({ success: false, message: error.message });
   }
 };

@@ -1,4 +1,5 @@
 import User from "../models/userModel.js";
+import { logger } from "../utils/logger.js";
 
 
 //GET MY PROFILE
@@ -135,9 +136,11 @@ export const updateUserRole = async (req, res) => {
     user.role = role;
     await user.save();
 
+    logger.success(`Role updated: ${user.email} → ${role} (by admin ${req.userId})`);
     return res.json({ success: true, message: "User role updated", data: user });
 
   } catch (error) {
+    logger.error("updateUserRole failed", { error: error.message });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -157,12 +160,14 @@ export const deleteUser = async (req, res) => {
       });
     }
 
+    logger.warn(`User deleted: ${user.email} (by admin ${req.userId})`);
     return res.json({
       success: true,
       message: "User deleted successfully",
     });
 
   } catch (error) {
+    logger.error("deleteUser failed", { error: error.message });
     return res.status(500).json({
       success: false,
       message: error.message,

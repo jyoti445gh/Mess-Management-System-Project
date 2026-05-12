@@ -3,6 +3,7 @@ import Meal from "../models/mealModel.js";
 import User from "../models/userModel.js";
 import { transporter } from "../utils/mailer.js";
 import { ENV } from "../config/env.js";
+import { logger } from "../utils/logger.js";
 
 // Helper: iterate every date between start and end (inclusive)
 const eachDay = (start, end) => {
@@ -60,8 +61,10 @@ export const applyLeave = async (req, res) => {
       });
     }
 
+    logger.success(`Leave applied: ${student.email} | ${start.toDateString()} → ${end.toDateString()}`);
     return res.status(201).json({ success: true, message: "Leave applied successfully", data: leave });
   } catch (error) {
+    logger.error("applyLeave failed", { error: error.message });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -127,8 +130,10 @@ export const approveLeave = async (req, res) => {
       `,
     });
 
+    logger.success(`Leave approved: ${leave.studentId.email} | ${days.length} days | meals disabled`);
     return res.json({ success: true, message: "Leave approved and meals updated", data: leave });
   } catch (error) {
+    logger.error("approveLeave failed", { error: error.message, leaveId: req.params.id });
     return res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -158,8 +163,10 @@ export const rejectLeave = async (req, res) => {
       `,
     });
 
+    logger.warn(`Leave rejected: ${leave.studentId.email} | ${leave._id}`);
     return res.json({ success: true, message: "Leave rejected", data: leave });
   } catch (error) {
+    logger.error("rejectLeave failed", { error: error.message, leaveId: req.params.id });
     return res.status(500).json({ success: false, message: error.message });
   }
 };

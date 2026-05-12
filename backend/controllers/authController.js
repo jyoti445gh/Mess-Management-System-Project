@@ -32,7 +32,7 @@ export const registerUser = async (req, res) => {
     await user.save();
 
     // Send OTP to user's email
-    await sendOtpMail(email, otp);
+    await sendOtpMail(email, otp, "registration");
     logger.success(`User registered: ${email}`);
 
     return res.status(201).json({
@@ -184,6 +184,34 @@ export const changePassword = async (req, res) => {
 
     return res.json({ success: true, message: "Password changed successfully" });
 
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// RESEND OTP (for registration)
+export const resendOtp = async (req, res) => {
+  try {
+    const email = req.params.email;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    if (user.isVerified) {
+      return res.status(400).json({ success: false, message: "Email already verified" });
+    }
+
+    // Generate new OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    user.otp = otp;
+    user.otpExpiry = new Date(Date.now() + 10 * 60 * 1000);
+    await user.save();
+
+    await sendOtpMail(email, otp, "registration");
+
+    return res.json({ success: true, message: "OTP resent successfully" });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }

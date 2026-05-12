@@ -9,6 +9,7 @@ import { ENV } from "./config/env.js";
 import connectDB from "./config/db.js";
 import passport from "./config/passport.js";
 import "./utils/reminderJob.js";
+import { logger } from "./utils/logger.js";
 
 // routes
 import authRoutes from "./routes/authRoute.js";
@@ -20,6 +21,7 @@ import billRoutes from "./routes/billRoutes.js";
 
 // middleware
 import { errorHandler } from "./middleware/errorMiddleware.js";
+import { requestLogger } from "./middleware/requestLogger.js";
 
 const app = express();
 
@@ -41,6 +43,9 @@ app.use(
 
 // logger
 app.use(morgan("dev"));
+
+// Request logger (writes to logs/)
+app.use(requestLogger);
 
 
 //  PASSPORT 
@@ -73,7 +78,9 @@ const startServer = async () => {
     await connectDB();
 
     app.listen(ENV.PORT, () => {
-      console.log(` Server running on port ${ENV.PORT}`);
+      logger.success(`Server running on port ${ENV.PORT}`);
+      logger.info(`Environment: ${ENV.NODE_ENV}`);
+      logger.info(`Logs directory: logs/app.log`);
     });
 
   } catch (error) {
