@@ -196,7 +196,7 @@ npm run dev
 ```
 
 Frontend runs by default on http://localhost:5173/  
-Backend API is served on http://localhost:3000/
+Backend API is served on http://localhost:8000/
 
 ---
 
