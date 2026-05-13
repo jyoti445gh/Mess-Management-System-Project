@@ -58,11 +58,12 @@ This Mess Management System provides an end-to-end management platform for mess 
 
 ```mermaid
 graph TD
-    FE[Frontend (React)] -- API Calls --> BE[Express.js Backend]
-    BE -- DB Operations --> DB[(MongoDB)]
-    BE -- Authentication --> AUTH[Google OAuth/JWT]
-    BE -- Email Notification --> MAIL[Nodemailer]
-    BE -- Logs --> LOGS[Loggers/Monitoring]
+    FE["Frontend - React"] -->|API Calls| BE["Express.js Backend"]
+    BE -->|DB Operations| DB[("MongoDB")]
+    BE -->|Authentication| AUTH["Google OAuth / JWT"]
+    BE -->|Email Notification| MAIL["Nodemailer"]
+    BE -->|Logs| LOGS["Loggers / Monitoring"]
+```
 
 
 
